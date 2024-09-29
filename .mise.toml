@@ -1,0 +1,67 @@
+[env]
+PROJECT_NAME = "strapi-project"
+MISE_ENV_FILE = ".env"
+
+[tools]
+node = "20.17.0"
+mkcert = "1.4.4"
+dprint = "0.47.2"
+envtpl = "0.1.2"
+
+[tasks."setup"]
+description = "Setup the project"
+run = [
+  # Install dependencies
+  "mise plugins install envtpl https://github.com/flexstack/asdf-envtpl.git",
+  "mise install",
+  "npm install",
+  # Create a local certificate authority
+  "mkcert -install",
+  "mkdir -p .ssh",
+  # If you use a custom development domain, add your domain after
+  # `localhost` in the command below.
+  """
+    mkcert \
+      -cert-file=.ssh/cert.pem \
+      -key-file=.ssh/cert-key.pem \
+    localhost 127.0.0.1 ::1
+  """,
+  # Create a .env file from the .env.template file
+  # See https://github.com/flexstack/envtpl to do more with `envtpl`
+  "envtpl .env.template -o .env",
+]
+sources = ["package.json", "*/**/*.{ts,tsx,js,jsx}", ".env.template"]
+outputs = ["package-lock.json", ".env", ".ssh/cert.pem", ".ssh/cert-key.pem"]
+
+[tasks."dev"]
+description = "Run the server and watch for changes"
+run = "npm run develop"
+
+[tasks."format"]
+description = "Format files in the project"
+run = "dprint fmt"
+
+[tasks."check:format"]
+description = "Check formatting"
+run = "dprint check"
+
+[tasks."dev:up"]
+description = "Start Docker services"
+run = "docker compose -p ${PROJECT_NAME} --env-file ${MISE_ENV_FILE} up --build --wait -d"
+
+[tasks."dev:down"]
+description = "Stop Docker services and development server"
+run = [
+  "docker compose -p ${PROJECT_NAME} --env-file ${MISE_ENV_FILE} down --remove-orphans",
+  "npx kill-port ${PORT} ${SOURCE_PORT}",
+]
+
+[tasks."default"]
+hide = true
+depends = ["dev"]
+
+[settings]
+activate_aggressive = true
+asdf_compat = true
+experimental = true
+yes = true

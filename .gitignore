@@ -129,3 +129,7 @@ dist
 build
 .strapi-updater.json
 .strapi-cloud.json
+.ssh
+
+# Force the vscode settings to be included
+!.vscode
